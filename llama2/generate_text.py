@@ -46,7 +46,7 @@ def generate_new_problem(prompt):
     cache = load_cache()
     for entry in cache:
         if entry.get("prompt") == prompt:
-            print("⚡ Usando cache.")
+            print("Usando cache.")
             return entry["generated_text"]
 
     output = pipe(
