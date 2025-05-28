@@ -8,10 +8,10 @@ local_model_path = Path("./models/fine_tuned_model")
 config_path = local_model_path / "config.json"
 
 if config_path.exists():
-    print("✅ Usando modelo fine-tuneado local.")
+    print("Usando modelo fine-tuneado local.")
     MODEL_NAME = str(local_model_path)
 else:
-    print("⚠️ Modelo fine-tuneado no encontrado, usando modelo base Mistral.")
+    print("Modelo fine-tuneado no encontrado, usando modelo base Mistral.")
     MODEL_NAME = "mistralai/Mistral-7B-v0.1"
 
 DATASET_PATH = Path("datasets/dataset.jsonl")
