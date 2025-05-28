@@ -8,10 +8,10 @@ local_model_path = Path("./models/fine_tuned_model")
 config_path = local_model_path / "config.json"
 
 if config_path.exists():
-    print("✅ Usando modelo fine-tuneado local.")
+    print("Usando modelo fine-tuneado local.")
     MODEL_NAME = str(local_model_path)
 else:
-    print("⚠️ Modelo fine-tuneado no encontrado, usando modelo base DeepSeek.")
+    print("Modelo fine-tuneado no encontrado, usando modelo base DeepSeek.")
     MODEL_NAME = "deepseek-ai/deepseek-llm-7b-base"
 
 DATASET_PATH = Path("datasets/dataset.jsonl")
