@@ -45,20 +45,7 @@ pip install -r requirements.txt
 
 ---
 
-### 2 Prepara los datos
-
-Copia tus archivos `.bch` dentro de:
-```
-/mistral/data/easy/
-/llama2/data/easy/
-/deepseek/data/easy/
-```
-y lo mismo para `medium/` y `hard/`.
-Cada modelo trabajará con su propio conjunto aislado.
-
----
-
-### 3 Crear el dataset combinado (JSONL)
+### 2 Crear el dataset combinado (JSONL)
 
 Ejecuta:
 ```bash
@@ -68,7 +55,7 @@ Esto generará `datasets/dataset.jsonl` combinando problemas originales y genera
 
 ---
 
-### 4 Tokenizar el dataset
+### 3 Tokenizar el dataset
 
 Ejecuta:
 ```bash
@@ -78,7 +65,7 @@ Esto creará `datasets/tokenized_dataset/` usando el tokenizer del modelo corres
 
 ---
 
-### 5 Fine-tuning del modelo
+### 4 Fine-tuning del modelo
 
 Ejecuta:
 ```bash
@@ -88,7 +75,7 @@ Esto entrenará el modelo y guardará el resultado en `models/fine_tuned_model/`
 
 ---
 
-### 6 Generar nuevos problemas
+### 5 Generar nuevos problemas
 
 Ejecuta:
 ```bash
@@ -112,7 +99,7 @@ El sistema verificará el cache (`errors_cache.jsonl`) y si es nuevo, generará 
 
 ## Automatización con script bash
 
-El script `run_all.sh` (que te puedo preparar) se ejecutará por carpeta de modelo (por ejemplo, solo `/mistral/`), y correrá en orden:
+El script `run_all.sh` se ejecutará por carpeta de modelo (por ejemplo, solo `/mistral/`), y correrá en orden:
 1. `prepare_dataset.py`
 2. `tokenize_dataset.py`
 3. `fine_tune.py`
