@@ -2,10 +2,11 @@
 # LLM Benchmarks Package 
 
 Este paquete contiene las carpetas y scripts listos para trabajar con modelos **Mistral**, **LLaMA2** y **DeepSeek** para:
-✅ Fine-tuning
-✅ Generación de nuevos problemas
-✅ Preparación y tokenización de datasets
-✅ Uso de sistema de cache para prompts generados
+
+* Fine-tuning
+* Generación de nuevos problemas
+* Preparación y tokenización de datasets
+* Uso de sistema de cache para prompts generados
 
 ---
 
