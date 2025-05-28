@@ -8,10 +8,10 @@ local_model_path = Path("./models/fine_tuned_model")
 config_path = local_model_path / "config.json"
 
 if config_path.exists():
-    print("✅ Usando modelo fine-tuneado local.")
+    print("Usando modelo fine-tuneado local.")
     MODEL_NAME = str(local_model_path)
 else:
-    print("⚠️ Modelo fine-tuneado no encontrado, usando modelo base LLaMA2.")
+    print("Modelo fine-tuneado no encontrado, usando modelo base LLaMA2.")
     MODEL_NAME = "meta-llama/Llama-2-7b-hf"
 
 DATASET_PATH = Path("datasets/dataset.jsonl")
