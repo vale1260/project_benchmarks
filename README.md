@@ -103,9 +103,9 @@ El sistema verificará el cache (`errors_cache.jsonl`) y si es nuevo, generará 
 - Cada script está configurado para trabajar con rutas locales (`./data`), así evitas problemas con rutas absolutas.
 - El uso de `.jsonl` permite trabajar con datasets grandes de forma eficiente.
 - Los modelos cargados son:
-    - Mistral → `mistralai/Mistral-7B-v0.1`
-    - LLaMA2 → `meta-llama/Llama-2-7b-hf`
-    - DeepSeek → `deepseek-ai/deepseek-llm-7b-base`
+    - Phi2 → `microsoft/phi-2`
+    - TinyLlama → `TinyLlama/TinyLlama-1.1B-Chat-v1.0`
+    - DeepSeek → `deepseek-ai/deepseek-coder-1.3b-instruct`
 
 ---
 
