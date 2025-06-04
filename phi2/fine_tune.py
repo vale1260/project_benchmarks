@@ -1,6 +1,7 @@
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer
 import os
+import torch
 
 def load_dataset_from_folder(folder_path):
     texts = []
@@ -31,10 +32,14 @@ def main():
 
     training_args = TrainingArguments(
         output_dir="./models/fine_tuned_model",
-        per_device_train_batch_size=2,
+        per_device_train_batch_size=1,          # Reducido al mínimo
         num_train_epochs=2,
         logging_dir="./logs",
-        save_total_limit=2
+        save_total_limit=2,
+        no_cuda=True,                           # Fuerza CPU
+        gradient_accumulation_steps=1,
+        optim="adafactor",                      # Optimización más liviana
+        report_to="none"                        # Evita errores si no usas wandb
     )
 
     trainer = Trainer(
@@ -50,3 +55,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
