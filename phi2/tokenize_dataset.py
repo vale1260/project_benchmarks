@@ -12,7 +12,7 @@ if config_path.exists():
     MODEL_NAME = str(local_model_path)
 else:
     print("Modelo fine-tuneado no encontrado, usando modelo base Mistral.")
-    MODEL_NAME = "microsoft/phi-2"
+    MODEL_NAME = "microsoft/phi-1_5"
 
 DATASET_PATH = Path("datasets/dataset.jsonl")
 OUTPUT_PATH = Path("datasets/tokenized_dataset")
