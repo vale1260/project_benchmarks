@@ -20,7 +20,7 @@ def prepare_dataset(texts, tokenizer):
     return Dataset.from_dict(encodings)
 
 def main():
-    model_name = "microsoft/phi-2"
+    model_name = "microsoft/phi-1_5"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(model_name)
