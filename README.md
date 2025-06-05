@@ -1,7 +1,7 @@
 
 # LLM Benchmarks Package 
 
-Este paquete contiene las carpetas y scripts listos para trabajar con modelos **Tinyllama**, **Phi2** y **DeepSeek** para:
+Este paquete contiene las carpetas y scripts listos para trabajar con modelos **Tinyllama** y **Phi1.5** para:
 * Fine-tuning
 * Generación de nuevos problemas
 * Preparación y tokenización de datasets
@@ -13,8 +13,7 @@ Este paquete contiene las carpetas y scripts listos para trabajar con modelos **
 
 ```
 /tinyllama/
-/phi2/
-/deepseek/
+/phi1.5/
     ├── data/
     │   ├── easy/
     │   ├── medium/
@@ -103,18 +102,6 @@ El sistema verificará el cache (`errors_cache.jsonl`) y si es nuevo, generará 
 - Cada script está configurado para trabajar con rutas locales (`./data`), así evitas problemas con rutas absolutas.
 - El uso de `.jsonl` permite trabajar con datasets grandes de forma eficiente.
 - Los modelos cargados son:
-    - Phi2 → `microsoft/phi-2`
+    - Phi2 → `microsoft/phi-1_5`
     - TinyLlama → `TinyLlama/TinyLlama-1.1B-Chat-v1.0`
-    - DeepSeek → `deepseek-ai/deepseek-coder-1.3b-instruct`
 
----
-
-## Automatización con script bash
-
-El script `run_all.sh` (que te puedo preparar) se ejecutará por carpeta de modelo (por ejemplo, solo `/mistral/`), y correrá en orden:
-1. `prepare_dataset.py`
-2. `tokenize_dataset.py`
-3. `fine_tune.py`
-4. `generate_text.py` (con un prompt predefinido o pasado como argumento)
-
-Esto permite automatizar todo el flujo para cada modelo de forma aislada.
