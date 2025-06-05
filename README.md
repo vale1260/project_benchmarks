@@ -47,9 +47,8 @@ pip install -r requirements.txt
 
 Copia tus archivos `.bch` dentro de:
 ```
-/mistral/data/easy/
-/llama2/data/easy/
-/deepseek/data/easy/
+/phi1.5/data/easy/
+/tinyllama/data/easy/
 ```
 y lo mismo para `medium/` y `hard/`.
 Cada modelo trabajará con su propio conjunto aislado.
