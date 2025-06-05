@@ -1,7 +1,10 @@
-
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer
 import os
+import torch
+
+# Forzar uso de CPU
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 def load_dataset_from_folder(folder_path):
     texts = []
@@ -26,6 +29,9 @@ def main():
     tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
+    # Asegurar que el modelo se cargue en CPU
+    model.to(torch.device("cpu"))
+
     base_path = "/home/colossus/ibex-lib-master/benchs/optim"
     texts = load_dataset_from_folder(base_path)
     dataset = prepare_dataset(texts, tokenizer)
@@ -35,7 +41,8 @@ def main():
         per_device_train_batch_size=2,
         num_train_epochs=2,
         logging_dir="./logs",
-        save_total_limit=2
+        save_total_limit=2,
+        no_cuda=True  # clave para desactivar GPU
     )
 
     trainer = Trainer(
