@@ -91,9 +91,9 @@ def validate_problem_structure(problem_text: str) -> bool:
     
     # Verificar componentes esenciales
     required_elements = [
-        ("variables", r"variables?\s*:"),
+        ("variables", r"variables?\s"),
         ("objective", r"(minimize|maximize)"),
-        ("constraints", r"constraints?\s*:"),
+        ("constraints", r"constraints?\s"),
         ("domain", r"in\s*\[")
     ]
     
@@ -104,6 +104,16 @@ def validate_problem_structure(problem_text: str) -> bool:
     
     return True
 
+def cut_at_first_end(text: str) -> str:
+    """Corta el texto justo después de la primera aparición de 'end' (case-insensitive)."""
+    pattern = re.compile(r"(.*?\bend\b)", re.DOTALL | re.IGNORECASE)
+    match = pattern.search(text)
+    if match:
+        return match.group(1).strip()
+    else:
+        # Si no encuentra 'end', devuelve todo tal cual
+        return text.strip()
+
 def generate_with_model(difficulty: str) -> str:
     """Genera un problema usando el modelo fine-tuned."""
     prompt = f"""Generate a {difficulty} optimization problem with the following characteristics:
@@ -112,47 +122,50 @@ def generate_with_model(difficulty: str) -> str:
 - Variable ranges: between {Config.DIFFICULTY_SETTINGS[difficulty]['var_range'][0]} and {Config.DIFFICULTY_SETTINGS[difficulty]['var_range'][1]}
 
 Format:
-Variables:
+Variables
 x1 in [lower, upper];
 x2 in [lower, upper];
 ...
 
-Minimize/Maximize:
+Minimize/Maximize
 objective_function;
 
-Constraints:
+Constraints
 constraint1;
 constraint2;
 ...
+end
 """
-    
     response = generator(
         prompt,
-        max_length=512,
+        max_new_tokens=Config.GENERATION_CONFIG["max_new_tokens"],
         num_return_sequences=1,
         pad_token_id=tokenizer.eos_token_id
     )
-    
-    return response[0]['generated_text']
+    generated_text = response[0]['generated_text']
+    if generated_text.startswith(prompt):
+        generated_text = generated_text[len(prompt):].strip()
+
+    # Cortar el texto justo después del primer 'end'
+    generated_text = cut_at_first_end(generated_text)
+
+    return generated_text
 
 def postprocess_problem(raw_problem: str) -> str:
     """Post-procesa el problema generado para estandarizar el formato."""
-    # Extraer solo la parte del problema (puede necesitar ajustes según tu modelo)
-    problem_match = re.search(
-        r"(Variables?:.*?)(?:\n\n|\Z)", 
-        raw_problem, 
-        re.DOTALL | re.IGNORECASE
-    )
-    
-    if problem_match:
-        problem_text = problem_match.group(1).strip()
-        
-        # Limpieza adicional
-        problem_text = re.sub(r'^\s*Problem:\s*', '', problem_text, flags=re.IGNORECASE)
-        problem_text = re.sub(r'\n{3,}', '\n\n', problem_text)
-        
-        return problem_text
-    return raw_problem
+    problem_text = raw_problem
+
+    # Quitar ':' luego de Variables, Minimize/Maximize, Constraints (independientemente de mayúsculas)
+    problem_text = re.sub(r"(Variables|Constraints|Minimize|Maximize):", r"\1", problem_text, flags=re.IGNORECASE)
+
+    # Limpiar saltos de línea excesivos
+    problem_text = re.sub(r'\n{3,}', '\n\n', problem_text)
+
+    # Asegurar que termine con 'end' (minúscula)
+    if not problem_text.strip().lower().endswith("end"):
+        problem_text = problem_text.strip() + "\nend"
+
+    return problem_text
 
 def save_problem(problem_text: str, difficulty: str = "easy") -> Path:
     """Guarda el problema generado en un archivo."""
@@ -250,15 +263,16 @@ def generate_structured_fallback(difficulty: str) -> str:
         constraints.append(f"{lhs} {operator} {rhs};")
     
     # Construir problema
-    problem = f"""Variables:
+    problem = f"""Variables
 {"\n".join(variables)}
 
-{opt_type}:
+{opt_type}
 {objective};
 
-Constraints:
-{"\n".join(constraints)}"""
-    
+Constraints
+{"\n".join(constraints)}
+end"""
+
     return problem
 
 # --- EJECUCIÓN PRINCIPAL ---
