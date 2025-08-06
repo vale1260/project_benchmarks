@@ -48,9 +48,8 @@ def initialize_model():
 
 tokenizer, model, generator = initialize_model()
 
-# --- FUNCIONES AUXILIARES MEJORADAS ---
+# --- FUNCIONES AUXILIARES ---
 def load_cache() -> List[Dict]:
-    """Carga el caché de problemas generados anteriormente."""
     cache = []
     if Config.CACHE_PATH.exists():
         with open(Config.CACHE_PATH, "r", encoding="utf-8") as f:
@@ -62,21 +61,17 @@ def load_cache() -> List[Dict]:
     return cache
 
 def save_cache(cache_data: List[Dict]) -> None:
-    """Guarda el caché de problemas generados."""
     Config.CACHE_PATH.parent.mkdir(exist_ok=True, parents=True)
     with open(Config.CACHE_PATH, "w", encoding="utf-8") as f:
         for item in cache_data:
             f.write(json.dumps(item) + "\n")
 
 def normalize_problem_text(text: str) -> str:
-    """Normaliza el texto del problema para comparación."""
-    text = re.sub(r'#.*$', '', text, flags=re.MULTILINE)  # Remove comments
-    text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
-    text = text.lower()
+    text = re.sub(r'#.*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'\s+', ' ', text).strip().lower()
     return text
 
 def is_problem_unique(problem_text: str, cache: List[Dict]) -> bool:
-    """Verifica si el problema generado es único."""
     normalized_new = normalize_problem_text(problem_text)
     for item in cache:
         if 'problem' in item:
@@ -86,76 +81,66 @@ def is_problem_unique(problem_text: str, cache: List[Dict]) -> bool:
     return True
 
 def validate_problem_structure(problem_text: str) -> bool:
-    """Valida la estructura básica del problema con más flexibilidad."""
     text_lower = problem_text.lower()
-    
-    # Verificar componentes esenciales
     required_elements = [
-        ("variables", r"variables?\s*:"),
+        ("variables", r"variables\s"),
         ("objective", r"(minimize|maximize)"),
-        ("constraints", r"constraints?\s*:"),
+        ("constraints", r"constraints\s"),
         ("domain", r"in\s*\[")
     ]
-    
     for name, pattern in required_elements:
         if not re.search(pattern, text_lower):
             print(f"Elemento faltante: {name}")
             return False
-    
     return True
 
+def cut_at_first_end(text: str) -> str:
+    pattern = re.compile(r"(.*?\bend\b)", re.DOTALL | re.IGNORECASE)
+    match = pattern.search(text)
+    return match.group(1).strip() if match else text.strip()
+
 def generate_with_model(difficulty: str) -> str:
-    """Genera un problema usando el modelo fine-tuned."""
     prompt = f"""Generate a {difficulty} optimization problem with the following characteristics:
 - Variables: {Config.DIFFICULTY_SETTINGS[difficulty]['num_vars'][0]} to {Config.DIFFICULTY_SETTINGS[difficulty]['num_vars'][1]} variables
 - Constraints: {Config.DIFFICULTY_SETTINGS[difficulty]['num_constraints'][0]} to {Config.DIFFICULTY_SETTINGS[difficulty]['num_constraints'][1]} constraints
 - Variable ranges: between {Config.DIFFICULTY_SETTINGS[difficulty]['var_range'][0]} and {Config.DIFFICULTY_SETTINGS[difficulty]['var_range'][1]}
 
 Format:
-Variables:
+Variables
 x1 in [lower, upper];
 x2 in [lower, upper];
 ...
 
-Minimize/Maximize:
+Minimize/Maximize
 objective_function;
 
-Constraints:
+Constraints
 constraint1;
 constraint2;
 ...
+end
 """
-    
     response = generator(
         prompt,
-        max_length=512,
+        max_new_tokens=Config.GENERATION_CONFIG["max_new_tokens"],
         num_return_sequences=1,
         pad_token_id=tokenizer.eos_token_id
     )
-    
-    return response[0]['generated_text']
+    generated_text = response[0]['generated_text']
+    if generated_text.startswith(prompt):
+        generated_text = generated_text[len(prompt):].strip()
+
+    return cut_at_first_end(generated_text)
 
 def postprocess_problem(raw_problem: str) -> str:
-    """Post-procesa el problema generado para estandarizar el formato."""
-    # Extraer solo la parte del problema (puede necesitar ajustes según tu modelo)
-    problem_match = re.search(
-        r"(Variables?:.*?)(?:\n\n|\Z)", 
-        raw_problem, 
-        re.DOTALL | re.IGNORECASE
-    )
-    
-    if problem_match:
-        problem_text = problem_match.group(1).strip()
-        
-        # Limpieza adicional
-        problem_text = re.sub(r'^\s*Problem:\s*', '', problem_text, flags=re.IGNORECASE)
-        problem_text = re.sub(r'\n{3,}', '\n\n', problem_text)
-        
-        return problem_text
-    return raw_problem
+    problem_text = raw_problem
+    problem_text = re.sub(r"(Variables|Constraints|Minimize|Maximize):", r"\1", problem_text, flags=re.IGNORECASE)
+    problem_text = re.sub(r'\n{3,}', '\n\n', problem_text)
+    if not problem_text.strip().lower().endswith("end"):
+        problem_text = problem_text.strip() + "\nend"
+    return problem_text
 
 def save_problem(problem_text: str, difficulty: str = "easy") -> Path:
-    """Guarda el problema generado en un archivo."""
     Config.GENERATED_PATH.mkdir(exist_ok=True, parents=True)
     difficulty_path = Config.GENERATED_PATH / difficulty
     difficulty_path.mkdir(exist_ok=True, parents=True)
@@ -168,22 +153,57 @@ def save_problem(problem_text: str, difficulty: str = "easy") -> Path:
     
     return filename
 
+def generate_structured_fallback(difficulty: str) -> str:
+    settings = Config.DIFFICULTY_SETTINGS[difficulty]
+    num_vars = random.randint(*settings['num_vars'])
+    num_constraints = random.randint(*settings['num_constraints'])
+    var_range = settings['var_range']
+    
+    variables = []
+    for i in range(1, num_vars + 1):
+        lower = random.randint(var_range[0], var_range[1] - 1)
+        upper = random.randint(lower + 1, var_range[1])
+        variables.append(f"x{i} in [{lower}, {upper}];")
+
+    opt_type = random.choice(["Minimize", "Maximize"])
+    objective_terms = [f"{random.choice(['+', '-'])} {round(random.uniform(0.5, 5), 2)}*x{i}" for i in range(1, num_vars + 1) if random.random() > 0.5]
+    if not objective_terms:
+        objective_terms.append(f"+ {round(random.uniform(0.5, 5), 2)}*x1")
+    objective = " ".join(objective_terms).lstrip("+ ").strip()
+
+    constraints = []
+    for _ in range(num_constraints):
+        terms = [f"{random.choice(['+', '-'])} {round(random.uniform(0.1, 3), 2)}*x{i}" for i in range(1, num_vars + 1) if random.random() > 0.3]
+        if not terms:
+            terms.append(f"+ {round(random.uniform(0.1, 3), 2)}*x1")
+        lhs = " ".join(terms).lstrip("+ ").strip()
+        rhs = round(random.uniform(5, 20), 2)
+        op = random.choice(["<=", ">=", "=="])
+        constraints.append(f"{lhs} {op} {rhs};")
+
+    return f"""Variables
+{"\n".join(variables)}
+
+{opt_type}
+{objective};
+
+Constraints
+{"\n".join(constraints)}
+end"""
+
 def generate_new_problem(difficulty: str = "easy") -> Tuple[Optional[str], Optional[Path]]:
-    """Genera un nuevo problema de optimización."""
     print(f"Generando problema de dificultad: {difficulty}")
     cache = load_cache()
     
     max_attempts = 3
     for attempt in range(max_attempts):
         print(f"Intento {attempt + 1}/{max_attempts}")
-        
-        # Generar usando el modelo (70% del tiempo) o plantilla estructurada (30%)
         if random.random() < 0.7:
             generated = generate_with_model(difficulty)
             generated = postprocess_problem(generated)
         else:
             generated = generate_structured_fallback(difficulty)
-        
+
         if validate_problem_structure(generated) and is_problem_unique(generated, cache):
             print("Problema válido y único generado")
             cache.append({"difficulty": difficulty, "problem": generated})
@@ -192,74 +212,9 @@ def generate_new_problem(difficulty: str = "easy") -> Tuple[Optional[str], Optio
             return generated, saved_path
         else:
             print("Problema inválido o duplicado, reintentando...")
-    
+
     print("No se pudo generar un problema válido después de varios intentos")
     return None, None
-
-def generate_structured_fallback(difficulty: str) -> str:
-    """Generador estructurado de respaldo cuando falla el modelo."""
-    settings = Config.DIFFICULTY_SETTINGS[difficulty]
-    num_vars = random.randint(*settings['num_vars'])
-    num_constraints = random.randint(*settings['num_constraints'])
-    var_range = settings['var_range']
-    
-    # Generar variables
-    variables = []
-    for i in range(1, num_vars + 1):
-        var_type = random.choice(['int', 'float'])
-        if var_type == 'int':
-            lower = random.randint(var_range[0], var_range[1] - 1)
-            upper = random.randint(lower + 1, var_range[1])
-        else:
-            lower = round(random.uniform(var_range[0], var_range[1] - 1), 2)
-            upper = round(random.uniform(lower + 0.1, var_range[1]), 2)
-        variables.append(f"x{i} in [{lower}, {upper}];")
-    
-    # Generar objetivo
-    opt_type = random.choice(["Minimize", "Maximize"])
-    objective_terms = []
-    for i in range(1, num_vars + 1):
-        coeff = round(random.uniform(0.5, 5), 2)
-        if random.random() > 0.5:  # 50% de probabilidad de incluir el término
-            sign = random.choice(["+", "-"])
-            objective_terms.append(f"{sign} {coeff}*x{i}")
-    
-    if not objective_terms:  # Asegurar al menos un término
-        coeff = round(random.uniform(0.5, 5), 2)
-        objective_terms.append(f"+ {coeff}*x1")
-    
-    objective = " ".join(objective_terms).lstrip("+ ").strip()
-    
-    # Generar restricciones
-    constraints = []
-    for _ in range(num_constraints):
-        constraint_terms = []
-        for i in range(1, num_vars + 1):
-            if random.random() > 0.3:  # 70% de probabilidad de incluir variable
-                coeff = round(random.uniform(0.1, 3), 2)
-                sign = random.choice(["+", "-"])
-                constraint_terms.append(f"{sign} {coeff}*x{i}")
-        
-        if not constraint_terms:
-            coeff = round(random.uniform(0.1, 3), 2)
-            constraint_terms.append(f"+ {coeff}*x1")
-        
-        lhs = " ".join(constraint_terms).lstrip("+ ").strip()
-        rhs = round(random.uniform(5, 20), 2)
-        operator = random.choice(["<=", ">=", "=="])
-        constraints.append(f"{lhs} {operator} {rhs};")
-    
-    # Construir problema
-    problem = f"""Variables:
-{"\n".join(variables)}
-
-{opt_type}:
-{objective};
-
-Constraints:
-{"\n".join(constraints)}"""
-    
-    return problem
 
 # --- EJECUCIÓN PRINCIPAL ---
 if __name__ == "__main__":
