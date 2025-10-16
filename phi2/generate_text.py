@@ -12,7 +12,6 @@ class Config:
     ORIGINAL_PATH = Path("/home/colossus/ibex-lib-master/benchs/optim")
     GENERATED_PATH = Path("generated_problems")
     CACHE_PATH = Path("data/errors_cache.jsonl")
-    MODEL_PATH = "./models/fine_tuned_model"
     
     DIFFICULTY_SETTINGS = {
         "easy": {"num_vars": (2, 4), "num_constraints": (1, 3), "var_range": (0, 10)},
@@ -56,12 +55,7 @@ def check_model_loading():
         print("Modelo fine-tuned encontrado correctamente")
         return True
 
-if not check_model_loading():
-    exit(1)
-
-tokenizer, model, generator = initialize_model()
-
-# --- FUNCIONES AUXILIARES ---
+# --- SISTEMA CACHE PARA EVITAR DUPLICADOS ---
 def load_cache() -> List[Dict]:
     """Carga el cache de problemas generados anteriormente."""
     cache = []
@@ -72,6 +66,7 @@ def load_cache() -> List[Dict]:
                     cache.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
+    print(f"Cache cargado: {len(cache)} problemas en historial")
     return cache
 
 def save_cache(cache_data: List[Dict]) -> None:
@@ -80,51 +75,60 @@ def save_cache(cache_data: List[Dict]) -> None:
     with open(Config.CACHE_PATH, "w", encoding="utf-8") as f:
         for item in cache_data:
             f.write(json.dumps(item) + "\n")
+    print("Cache actualizado")
 
 def normalize_problem_text(text: str) -> str:
-    """Normaliza el texto del problema para comparacion."""
+    """Normaliza el texto del problema para comparación."""
     text = re.sub(r'#.*$', '', text, flags=re.MULTILINE)
     text = re.sub(r'\s+', ' ', text).strip()
     text = text.lower()
     return text
 
 def is_problem_unique(problem_text: str, cache: List[Dict]) -> bool:
-    """Verifica si el problema generado es unico."""
+    """Verifica si el problema generado es único comparando con el cache."""
     normalized_new = normalize_problem_text(problem_text)
+    
     for item in cache:
         if 'problem' in item:
             normalized_existing = normalize_problem_text(item['problem'])
             if normalized_new == normalized_existing:
+                print("Problema duplicado detectado en cache")
                 return False
+    
+    print("Problema único - no está en cache")
     return True
 
 def validate_problem_structure(problem_text: str) -> bool:
     """Valida la estructura del problema de forma rigurosa."""
     lines = problem_text.strip().split('\n')
     
-    # Verificar estructura basica
+    # Verificar estructura básica
     has_variables = any('variables' in line.lower() for line in lines)
-    has_objective = any(word in line.lower() for line in lines for word in ['minimize', 'maximize'])
+    has_objective = any(word in line.lower() for line in lines for word in ['minimize', 'maximize'])  # ← AMBOS
     has_constraints = any('constraints' in line.lower() for line in lines)
     has_end = any('end' in line.lower() for line in lines)
     
     if not all([has_variables, has_objective, has_constraints, has_end]):
+        print("Estructura básica incompleta")
         return False
     
     # Verificar formato de variables
     variable_lines = [line for line in lines if ' in [' in line and '];' in line]
     if len(variable_lines) < 2:
+        print("Muy pocas variables definidas")
         return False
     
     # Verificar que hay restricciones
     constraint_lines = [line for line in lines if any(op in line for op in ['<=', '>=', '==', '=']) and ';' in line]
     if len(constraint_lines) < 1:
+        print("No hay restricciones válidas")
         return False
     
+    print("Estructura del problema válida")
     return True
 
 def cut_at_first_end(text: str) -> str:
-    """Corta el texto justo despues de la primera aparicion de 'end'."""
+    """Corta el texto justo después de la primera aparición de 'end'."""
     pattern = re.compile(r"(.*?\bend\b)", re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
     if match:
@@ -136,8 +140,10 @@ def generate_with_model(difficulty: str) -> str:
     """Genera un problema usando SOLO el modelo fine-tuned."""
     settings = Config.DIFFICULTY_SETTINGS[difficulty]
     
+    # PROMPT MODIFICADO - AHORA INCLUYE MINIMIZE Y MAXIMIZE
     prompt = f"""Generate a {difficulty} optimization problem in EXACT format:
 
+Example 1 - MINIMIZATION:
 Variables
 x1 in [0, 10];
 x2 in [-5, 15];
@@ -154,17 +160,37 @@ x2 == 2.5;
 
 end
 
+Example 2 - MAXIMIZATION:
+Variables
+y1 in [0, 8];
+y2 in [2, 12];
+y3 in [-3, 10];
+
+Maximize
+1.5*y1 + 2.8*y2 + 0.9*y3;
+
+Constraints
+y1 + y2 <= 10;
+2*y1 - y3 >= 1;
+y2 <= 8;
+y1 + y2 + y3 <= 15;
+
+end
+
 Requirements:
 - Exactly {settings['num_vars'][0]}-{settings['num_vars'][1]} variables
 - Exactly {settings['num_constraints'][0]}-{settings['num_constraints'][1]} constraints
 - Variables must have bounds [lower, upper]
-- Use coefficients with decimals like 2.5, 1.7, etc.
+- Use coefficients with decimals like 2.5, 1.7, 0.9, etc.
+- Objective can be EITHER Minimize OR Maximize  # ← NUEVA INSTRUCCIÓN
 - Each constraint must end with ;
 - Objective must end with ;
 - End with exactly 'end'
 
-Now generate a new unique problem:
+Now generate a new unique {difficulty} problem (can be minimization or maximization):
 """
+    tokenizer, model, generator = initialize_model()
+    
     response = generator(
         prompt,
         max_new_tokens=Config.GENERATION_CONFIG["max_new_tokens"],
@@ -196,7 +222,7 @@ def postprocess_problem(raw_problem: str) -> str:
         if not line:
             continue
             
-        # Detectar secciones
+        # Detectar secciones (AHORA INCLUYE MAXIMIZE)
         lower_line = line.lower()
         if 'variable' in lower_line and '[' not in line:
             current_section = "Variables"
@@ -204,7 +230,7 @@ def postprocess_problem(raw_problem: str) -> str:
         elif 'minimize' in lower_line:
             current_section = "Minimize"
             output_lines.append("Minimize")
-        elif 'maximize' in lower_line:
+        elif 'maximize' in lower_line:  # ← NUEVA DETECCIÓN
             current_section = "Maximize"
             output_lines.append("Maximize")
         elif 'constraint' in lower_line:
@@ -214,7 +240,7 @@ def postprocess_problem(raw_problem: str) -> str:
             output_lines.append("end")
             break
         else:
-            # Agregar linea segun la seccion actual
+            # Agregar línea según la sección actual
             if current_section and line:
                 output_lines.append(line)
     
@@ -242,42 +268,60 @@ def save_problem(problem_text: str, difficulty: str = "easy") -> Path:
     return filename
 
 def generate_new_problem(difficulty: str = "easy") -> Tuple[Optional[str], Optional[Path]]:
-    """Genera un nuevo problema de optimizacion usando SOLO el modelo entrenado."""
-    print(f"Generando problema de dificultad: {difficulty}")
+    """Genera un nuevo problema de optimización usando SOLO el modelo entrenado."""
+    print(f"\n Generando problema de dificultad: {difficulty}")
     cache = load_cache()
     
     max_attempts = 15
     for attempt in range(max_attempts):
-        print(f"Intento {attempt + 1}/{max_attempts}")
+        print(f" Intento {attempt + 1}/{max_attempts}")
         
-        # 100% MODELO ENTRENADO - sin fallback
+        # Generar con modelo entrenado
         generated = generate_with_model(difficulty)
         generated = postprocess_problem(generated)
         
+        # Verificar unicidad y estructura
         if validate_problem_structure(generated) and is_problem_unique(generated, cache):
-            print("Problema valido y unico generado con el modelo entrenado")
+            print("Problema válido y único generado con el modelo entrenado")
+            
+            # Actualizar cache
             cache.append({"difficulty": difficulty, "problem": generated})
             save_cache(cache)
+            
+            # Guardar archivo
             saved_path = save_problem(generated, difficulty)
             return generated, saved_path
         else:
-            print("Problema invalido o duplicado, reintentando con el modelo...")
+            print("Problema inválido o duplicado, reintentando...")
     
-    print("No se pudo generar un problema valido despues de todos los intentos")
+    print("No se pudo generar un problema válido después de todos los intentos")
     return None, None
 
 # --- EJECUCIÓN PRINCIPAL ---
 if __name__ == "__main__":
+    # Verificar modelo
+    if not check_model_loading():
+        exit(1)
+    
+    # Configuración
+    Config.MODEL_PATH = "./models/fine_tuned_model"
+    
+    # Seleccionar dificultad
     difficulty = input("Selecciona dificultad (easy/medium/hard): ").strip().lower()
     if difficulty not in Config.DIFFICULTY_SETTINGS:
-        print("Dificultad invalida. Usando 'easy' por defecto.")
+        print("Dificultad inválida. Usando 'easy' por defecto.")
         difficulty = "easy"
 
+    # Generar problema
     problem, saved_path = generate_new_problem(difficulty)
 
     if problem:
-        print("\n=== Problema generado ===\n")
+        print("\n" + "="*50)
+        print("PROBLEMA GENERADO EXITOSAMENTE")
+        print("="*50)
         print(problem)
-        print(f"\nGuardado en: {saved_path}")
+        print(f"\n Guardado en: {saved_path}")
+        print(f" Cache actualizado: data/errors_cache.jsonl")
+        
     else:
-        print("\nNo se pudo generar un problema valido. Intenta nuevamente.")
+        print("\n No se pudo generar un problema válido. Intenta nuevamente.")
