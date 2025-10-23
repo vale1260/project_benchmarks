@@ -6,9 +6,9 @@ import torch
 def load_optim_problems():
     """Carga SOLO los problemas de la carpeta optim/"""
     texts = []
-    base_path = "/home/colossus/ibex-lib-master/benchs/optim"
+    base_path = "/home/colossus/project_benchmarks/Dataset/dbscan"
     
-    for difficulty in ["easy", "medium", "hard"]:
+    for difficulty in ["easy", "medium", "hard", "unsolved"]:
         difficulty_path = os.path.join(base_path, difficulty)
         if not os.path.exists(difficulty_path):
             continue
