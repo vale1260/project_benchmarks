@@ -157,7 +157,7 @@ Minimize
 Constraints
 x1 + 2*x2 <= 15;
 x1 - x3 >= 3;
-x2 == 2.5;
+x2 = 2.5;
 
 end
 
