@@ -4,7 +4,6 @@ import os
 import torch
 
 def load_optim_problems():
-    """Carga SOLO los problemas de la carpeta optim/"""
     texts = []
     base_path = "/home/colossus/project_benchmarks/Dataset/kmeans"
     
@@ -34,12 +33,12 @@ def main():
     texts = load_optim_problems()
     
     if len(texts) == 0:
-        print("ERROR: No se encontraron problemas en optim/")
+        print("ERROR: No se encontraron problemas")
         return
     
     # Dividir 90-10
     train_texts, val_texts = train_test_split(texts, test_size=0.1, random_state=42)
-    print(f"Entrenamiento: {len(train_texts)}, Validación: {len(val_texts)}")
+    print(f"Entrenamiento: {len(train_texts)}, Validacion: {len(val_texts)}")
     
     # Tokenizar
     train_encodings = tokenizer(
@@ -89,7 +88,7 @@ def main():
     model.save_pretrained("./models/fine_tuned_model")
     tokenizer.save_pretrained("./models/fine_tuned_model")
     
-    print("Entrenamiento completado usando SOLO problemas de optim/")
+    print("Entrenamiento completado")
 
 if __name__ == "__main__":
     main()

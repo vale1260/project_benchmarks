@@ -4,7 +4,6 @@ import os
 import torch
 
 def load_optim_problems():
-    """Carga SOLO los problemas de la carpeta optim/"""
     texts = []
     base_path = "/home/colossus/project_benchmarks/Dataset/kmeans"
     
@@ -46,7 +45,7 @@ def main():
     texts = load_optim_problems()
     
     if len(texts) == 0:
-        print("ERROR: No se encontraron problemas en optim/")
+        print("ERROR: No se encontraron problemas")
         return
     
     # Dividir 90-10
@@ -110,8 +109,8 @@ def main():
     model.save_pretrained("./models/fine_tuned_gpt_neo")
     tokenizer.save_pretrained("./models/fine_tuned_gpt_neo")
     
-    print("✅ ¡Entrenamiento completado!")
-    print("📁 Modelo guardado en: ./models/fine_tuned_gpt_neo/")
+    print("Entrenamiento completado")
+    print("Modelo guardado en: ./models/fine_tuned_gpt_neo/")
 
 if __name__ == "__main__":
     main()

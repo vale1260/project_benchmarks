@@ -46,7 +46,7 @@ def check_model_loading():
     if not model_path.exists():
         print("ERROR: No se encuentra el modelo fine-tuned")
         return False
-    print("✅ Modelo GPT-Neo fine-tuned encontrado")
+    print("Modelo GPT-Neo fine-tuned encontrado")
     return True
 
 # --- CACHE (igual) ---
@@ -59,7 +59,7 @@ def load_cache() -> List[Dict]:
                     cache.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
-    print(f"📊 Cache cargado: {len(cache)} problemas")
+    print(f"Cache cargado: {len(cache)} problemas")
     return cache
 
 def save_cache(cache_data: List[Dict]) -> None:
@@ -96,7 +96,7 @@ def validate_problem_structure(problem_text: str) -> bool:
     }
     
     if not all(sections_found.values()):
-        print(f"❌ Faltan secciones: {[k for k,v in sections_found.items() if not v]}")
+        print(f"Faltan secciones: {[k for k,v in sections_found.items() if not v]}")
         return False
 
     # Buscar variables (patrón más flexible)
@@ -105,7 +105,7 @@ def validate_problem_structure(problem_text: str) -> bool:
         for l in lines
     )
     if not variables_found:
-        print("❌ No se encontraron variables válidas")
+        print("No se encontraron variables validas")
         return False
 
     # Buscar al menos una restricción
@@ -114,10 +114,10 @@ def validate_problem_structure(problem_text: str) -> bool:
         for l in lines
     )
     if not constraints_found:
-        print("❌ No se encontraron restricciones válidas")
+        print("No se encontraron restricciones validas")
         return False
 
-    print("✅ Estructura válida")
+    print("Estructura valida")
     return True
 
 def cut_at_first_end(text: str) -> str:
@@ -231,29 +231,29 @@ def save_problem(problem_text: str, difficulty: str = "easy") -> Path:
     return filename
 
 def generate_new_problem(difficulty: str = "easy") -> Tuple[Optional[str], Optional[Path]]:
-    print(f"\n🎯 Generando problema: {difficulty}")
+    print(f"Generando problema: {difficulty}")
     cache = load_cache()
     
     for attempt in range(15):
-        print(f"🔄 Intento {attempt + 1}/15")
+        print(f"Intento {attempt + 1}/15")
         generated = generate_with_model(difficulty)
         
         if not generated:
-            print("❌ Generación falló, reintentando...")
+            print("Generacion fallo, reintentando...")
             continue
             
         processed = postprocess_problem(generated)
         
         if validate_problem_structure(processed) and is_problem_unique(processed, cache):
-            print("✅ Problema válido y único generado!")
+            print("Problema valido")
             cache.append({"difficulty": difficulty, "problem": processed})
             save_cache(cache)
             saved_path = save_problem(processed, difficulty)
             return processed, saved_path
         else:
-            print("❌ Problema inválido o duplicado, reintentando...")
+            print("Problema invalido o duplicado, reintentando...")
     
-    print("❌ No se pudo generar un problema válido después de 15 intentos")
+    print("No se pudo generar un problema valido")
     return None, None
 
 # --- EJECUCIÓN ---
@@ -266,9 +266,9 @@ if __name__ == "__main__":
     
     if problem:
         print("\n" + "="*50)
-        print("🎉 PROBLEMA GENERADO EXITOSAMENTE")
+        print("PROBLEMA GENERADO EXITOSAMENTE")
         print("="*50)
         print(problem)
-        print(f"\n💾 Guardado en: {saved_path}")
+        print(f"Guardado en: {saved_path}")
     else:
-        print("\n😞 No se pudo generar un problema válido")
+        print("\nNo se pudo generar un problema valido")

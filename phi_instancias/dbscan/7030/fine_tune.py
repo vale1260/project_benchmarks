@@ -18,7 +18,7 @@ def load_optim_problems_by_difficulty():
     for difficulty in problems_by_difficulty.keys():
         difficulty_path = os.path.join(base_path, difficulty)
         if not os.path.exists(difficulty_path):
-            print(f"Advertencia: No se encontró la carpeta {difficulty}")
+            print(f"Advertencia: No se encontro la carpeta {difficulty}")
             continue
             
         for filename in os.listdir(difficulty_path):

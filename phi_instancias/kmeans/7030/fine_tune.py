@@ -18,7 +18,7 @@ def load_optim_problems_by_difficulty():
     for difficulty in problems_by_difficulty.keys():
         difficulty_path = os.path.join(base_path, difficulty)
         if not os.path.exists(difficulty_path):
-            print(f"Advertencia: No se encontró la carpeta {difficulty}")
+            print(f"Advertencia: No se encontro la carpeta {difficulty}")
             continue
             
         for filename in os.listdir(difficulty_path):
@@ -47,7 +47,7 @@ def train_for_difficulty(difficulty, texts, model_name="microsoft/phi-1_5"):
     
     # Dividir datos 70-30
     train_texts, val_texts = train_test_split(texts, test_size=0.3, random_state=42)
-    print(f"Entrenamiento: {len(train_texts)}, Validación: {len(val_texts)}")
+    print(f"Entrenamiento: {len(train_texts)}, Validacion: {len(val_texts)}")
     
     # Tokenizar
     train_encodings = tokenizer(

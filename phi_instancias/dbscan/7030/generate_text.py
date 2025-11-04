@@ -51,16 +51,16 @@ def check_model_loading(difficulty: str = "easy"):
     general_path = Path("./models/fine_tuned_model")
     
     if not specific_path.exists() and not general_path.exists():
-        print("ERROR: No se encuentra ningún modelo fine-tuned")
-        print("Por favor, verifica que los modelos estén en:")
-        print(f"  - ./models/fine_tuned_{difficulty}/ (específico)")
+        print("ERROR: No se encuentra ningun modelo fine-tuned")
+        print("Por favor, verifica que los modelos esten en:")
+        print(f"  - ./models/fine_tuned_{difficulty}/ (especifico)")
         print("  - O ./models/fine_tuned_model/ (general)")
         return False
     elif specific_path.exists():
-        print(f"Modelo específico para {difficulty} encontrado")
+        print(f"Modelo especifico para {difficulty} encontrado")
         return True
     else:
-        print("Usando modelo general (no se encontró modelo específico)")
+        print("Usando modelo general (no se encontro modelo especifico)")
         return True
 
 # --- SISTEMA CACHE PARA EVITAR DUPLICADOS ---
@@ -96,7 +96,7 @@ def is_problem_unique(problem_text: str, cache: List[Dict]) -> bool:
             if normalized_new == normalized_existing:
                 print("Problema duplicado detectado en cache")
                 return False
-    print("Problema único - no está en cache")
+    print("Problema unico")
     return True
 
 def validate_problem_structure(problem_text: str) -> bool:
@@ -105,7 +105,7 @@ def validate_problem_structure(problem_text: str) -> bool:
 
     # Rechazar cualquier 'Maximize'
     if any('maximize' in l.lower() for l in lines):
-        print("Salida inválida: se encontró 'Maximize' (solo se permite 'Minimize').")
+        print("Salida invalida: se encontro 'Maximize' (solo se permite 'Minimize').")
         return False
 
     has_vars = any(l.strip().lower() == 'variables' for l in lines)
@@ -128,11 +128,11 @@ def validate_problem_structure(problem_text: str) -> bool:
         return False
 
     # Al menos 1 restricción con operador y ';'
-    if not any(any(op in l for op in ['<=', '>=', '==', '=']) and l.strip().endswith(';') for l in lines):
+    if not any(any(op in l for op in ['<=', '>=', '=']) and l.strip().endswith(';') for l in lines):
         print("No hay restricciones válidas.")
         return False
 
-    print("Estructura del problema válida")
+    print("Estructura del problema valida")
     return True
 
 def cut_at_first_end(text: str) -> str:
@@ -275,14 +275,14 @@ def generate_new_problem(difficulty: str = "easy") -> Tuple[Optional[str], Optio
         generated = generate_with_model(difficulty)
         generated = postprocess_problem(generated)
         if validate_problem_structure(generated) and is_problem_unique(generated, cache):
-            print("Problema válido y único generado con el modelo entrenado")
+            print("Problema valido")
             cache.append({"difficulty": difficulty, "problem": generated})
             save_cache(cache)
             saved_path = save_problem(generated, difficulty)
             return generated, saved_path
         else:
-            print("Problema inválido o duplicado, reintentando...")
-    print("No se pudo generar un problema válido después de todos los intentos")
+            print("Problema invalido o duplicado, reintentando...")
+    print("No se pudo generar un problema valido")
     return None, None
 
 # --- EJECUCIÓN PRINCIPAL ---
@@ -298,7 +298,7 @@ if __name__ == "__main__":
         print("PROBLEMA GENERADO EXITOSAMENTE")
         print("="*50)
         print(problem)
-        print(f"\n Guardado en: {saved_path}")
-        print(f" Cache actualizado: {Config.CACHE_PATH}")
+        print(f"Guardado en: {saved_path}")
+        print(f"Cache actualizado: {Config.CACHE_PATH}")
     else:
-        print("\n No se pudo generar un problema válido. Intenta nuevamente.")
+        print("No se pudo generar un problema valido. Intenta nuevamente...")
