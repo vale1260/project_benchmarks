@@ -14,12 +14,12 @@ class Config:
 
     # CONFIGURACIÓN MÁS ESTRICTA para GPT-Neo
     GENERATION_CONFIG = {
-        "temperature": 0.3,           # 🔽 MÁS BAJO = más determinista
+        "temperature": 0.3,           # MÁS BAJO = más determinista
         "top_p": 0.85,
-        "top_k": 40,                  # ✅ Añadir top_k
-        "max_new_tokens": 300,        # 🔽 Reducido para más enfoque
+        "top_k": 40,                  # Añadir top_k
+        "max_new_tokens": 300,        # Reducido para más enfoque
         "do_sample": True,
-        "repetition_penalty": 1.3,    # 🔽 Más alto para menos repeticiones
+        "repetition_penalty": 1.3,    # Más alto para menos repeticiones
         "num_beams": 1,               # Búsqueda greedy para más consistencia
     }
 
@@ -169,14 +169,14 @@ Generate a new {difficulty} problem:
             max_new_tokens=Config.GENERATION_CONFIG["max_new_tokens"],
             num_return_sequences=1,
             pad_token_id=tokenizer.eos_token_id,
-            return_full_text=False  # ✅ Solo el texto generado, no el prompt
+            return_full_text=False  # Solo el texto generado, no el prompt
         )
         
         generated_text = response[0]['generated_text'].strip()
         return cut_at_first_end(generated_text)
         
     except Exception as e:
-        print(f"❌ Error en generación: {e}")
+        print(f"Error en generación: {e}")
         return ""
 
 def postprocess_problem(raw_problem: str) -> str:
