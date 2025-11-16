@@ -22,7 +22,7 @@ def load_optim_problems():
     return texts
 
 def main():
-    # ✅ USAR GPT-Neo 1.3B - mismo tamaño que Phi-1.5
+    # USAR GPT-Neo 1.3B - mismo tamaño que Phi-1.5
     model_name = "EleutherAI/gpt-neo-1.3B"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     
