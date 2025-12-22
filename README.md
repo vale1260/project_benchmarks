@@ -10,7 +10,7 @@ Este paquete contiene las carpetas y scripts listos para trabajar con modelos **
 ## Estructura del paquete
 
 ```
-/tinyllama/
+/gptneo/
 /phi1.5/
     ├── fine_tune.py
     ├── generate_text.py
@@ -55,5 +55,5 @@ El sistema verificará el cache y si es nuevo, generará un problema y lo guarda
 - Cada script está configurado para trabajar con rutas locales (`./data`), así evitas problemas con rutas absolutas.
 - Los modelos cargados son:
     - Phi2 → `microsoft/phi-1_5`
-    - TinyLlama → `TinyLlama/TinyLlama-1.1B-Chat-v1.0`
+    - GPT-Neo → `EleutherAI/gpt-neo-1.3B`
 
