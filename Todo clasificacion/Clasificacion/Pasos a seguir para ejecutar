@@ -1,0 +1,8 @@
+# 1. Crear el entorno virtual
+python3 -m venv mi_entorno
+
+# 2. Activar el entorno virtual
+source mi_entorno/bin/activate
+
+# 3. Instalar las dependencias
+pip install -r requirements.txt
