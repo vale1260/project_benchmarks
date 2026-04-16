@@ -1,7 +1,7 @@
 
 # LLM Benchmarks Package 
 
-Este paquete contiene las carpetas y scripts listos para trabajar con modelos **Tinyllama** y **Phi1.5** para:
+Este paquete contiene las carpetas y scripts listos para trabajar con modelos **GPT-Neo** y **Phi1.5** para:
 * Fine-tuning
 * Generación de nuevos problemas
 
